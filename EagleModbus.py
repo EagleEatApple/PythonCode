@@ -6,7 +6,8 @@ import sys
 import modbus_tk
 import modbus_tk.defines as mdef
 import modbus_tk.modbus
-import modbus_tk.modbus_tcp 
+import modbus_tk.modbus_tcp
+import struct 
 
 
 try:
@@ -14,8 +15,8 @@ try:
   server = modbus_tk.modbus_tcp.TcpServer(port=502, address='127.0.0.1', timeout_in_sec=3)
   server.start()
   slave_1 = server.add_slave(1)
-  slave_1.add_block('slave1_block1', mdef.HOLDING_REGISTERS, 100, 2)
-  slave_1.add_block('slave2_block1', mdef.HOLDING_REGISTERS, 200, 2)
+  slave_1.add_block('slave1_block1', mdef.HOLDING_REGISTERS, 300, 100)
+  slave_1.add_block('slave2_block1', mdef.HOLDING_REGISTERS, 400, 100)
 
   os.system('modprobe w1-gpio')
   os.system('modprobe w1-therm')
@@ -42,13 +43,15 @@ try:
           
   while True:
 	  temp_c = read_temp()
+	  bytetemp = struct.unpack('HH',struct.pack('f',temp_c))
           temp_f = temp_c * 9.0 / 5.0 + 32.0
-          slave_1.set_values('slave1_block1', 100, temp_c)
-          slave_1.set_values('slave2_block1', 200, temp_f)
+ 	  slave_1.set_values('slave1_block1', 300, bytetemp)
+          slave_1.set_values('slave2_block1', 400, temp_f)
           print datetime.datetime.now(),"Current Temperature is: %.2f" %read_temp(),"C %.2f" %temp_f,"F"
 	  time.sleep(1)
 except:
   print '=================== error ================='
 finally:
   print '=================== stop =================='
+  server.stop()
   sys.exit(1)
